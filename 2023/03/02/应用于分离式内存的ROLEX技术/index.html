@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>应用于分离式内存的ROLEX技术 - Doxel&#039;s Garden</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="Doxel&#039;s Garden"><meta name="msapplication-TileImage" content="/img/light.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Doxel&#039;s Garden"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="哈哈, 赶了半天ddl被放鸽子了, 科研课堂也就图个乐.  ROLEX方法的提出动因 在分离式内存 (disaggregated memory) 中, 使用树形结构来索引有序键值的效果和性能都不尽人意.  XStore系统首次将智能索引 (learned index) 技术引入到分布式储存, 解决了树形结构的不足. 但对于动态的workload, XStore只能依赖于集成的内存系统."><meta property="og:type" content="blog"><meta property="og:title" content="应用于分离式内存的ROLEX技术"><meta property="og:url" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/"><meta property="og:site_name" content="Doxel&#039;s Garden"><meta property="og:description" content="哈哈, 赶了半天ddl被放鸽子了, 科研课堂也就图个乐.  ROLEX方法的提出动因 在分离式内存 (disaggregated memory) 中, 使用树形结构来索引有序键值的效果和性能都不尽人意.  XStore系统首次将智能索引 (learned index) 技术引入到分布式储存, 解决了树形结构的不足. 但对于动态的workload, XStore只能依赖于集成的内存系统."><meta property="og:locale" content="zh_CN"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230302220619026.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228100049413.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228102851396.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228102839243.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228104223199.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228184803390.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228190548217.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228192436637.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228200229987.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228200935807.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201138460.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201324494.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201407411.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201809137.png"><meta property="og:image" content="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201930513.png"><meta property="article:published_time" content="2023-03-02T14:10:46.000Z"><meta property="article:modified_time" content="2023-03-02T14:14:32.736Z"><meta property="article:author" content="Doxel"><meta property="article:tag" content="科研课堂"><meta property="article:tag" content="分离式内存"><meta property="twitter:card" content="summary"><meta property="twitter:image" content="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230302220619026.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/"},"headline":"应用于分离式内存的ROLEX技术","image":["http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230302220619026.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228100049413.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228102851396.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228102839243.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228104223199.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228184803390.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228190548217.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228192436637.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228200229987.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228200935807.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201138460.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201324494.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201407411.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201809137.png","http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201930513.png"],"datePublished":"2023-03-02T14:10:46.000Z","dateModified":"2023-03-02T14:14:32.736Z","author":{"@type":"Person","name":"Doxel"},"publisher":{"@type":"Organization","name":"Doxel's Garden","logo":{"@type":"ImageObject","url":"http://example.com/img/logo.png"}},"description":"哈哈, 赶了半天ddl被放鸽子了, 科研课堂也就图个乐.  ROLEX方法的提出动因 在分离式内存 (disaggregated memory) 中, 使用树形结构来索引有序键值的效果和性能都不尽人意.  XStore系统首次将智能索引 (learned index) 技术引入到分布式储存, 解决了树形结构的不足. 但对于动态的workload, XStore只能依赖于集成的内存系统."}</script><link rel="canonical" href="http://example.com/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/"><link rel="icon" href="/img/light.png"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@9.12.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+          Array
+              .from(document.querySelectorAll('.tab-content'))
+              .forEach($tab => {
+                  $tab.classList.add('is-hidden');
+              });
+          Array
+              .from(document.querySelectorAll('.tabs li'))
+              .forEach($tab => {
+                  $tab.classList.remove('is-active');
+              });
+          const $activeTab = document.querySelector(location.hash);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+          const $tabMenu = document.querySelector(`a[href="${location.hash}"]`);
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.2.0"></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/logo.png" alt="Doxel&#039;s Garden" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="My GitHub" href="https://github.com/DouyaBula"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2023-03-02T14:10:46.000Z" title="2023/3/2 22:10:46">2023-03-02</time>发表</span><span class="level-item"><time dateTime="2023-03-02T14:14:32.736Z" title="2023/3/2 22:14:32">2023-03-02</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/%E9%98%85%E8%AF%BB/">阅读</a></span><span class="level-item">9 分钟读完 (大约1309个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">应用于分离式内存的ROLEX技术</h1><div class="content"><p>哈哈, 赶了半天ddl被放鸽子了, 科研课堂也就图个乐.<br><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230302220619026.png" alt="image-20230302220619026"></p>
+<hr>
+<h1 id="ROLEX方法的提出动因"><a href="#ROLEX方法的提出动因" class="headerlink" title="ROLEX方法的提出动因"></a>ROLEX方法的提出动因</h1><ul>
+<li><p>在分离式内存 (disaggregated memory) 中, 使用树形结构来索引有序键值的效果和性能都不尽人意.</p>
+</li>
+<li><p>XStore系统首次将智能索引 (learned index) 技术引入到分布式储存, 解决了树形结构的不足. 但对于动态的workload, XStore只能依赖于集成的内存系统.</p>
+<span id="more"></span>
+
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228100049413.png" alt="image-20230228100049413"></p>
+</li>
+<li><p>对XStore进行改进以适用于分离式内存: XStore-D, 但效果仍不理想. 主要有以下原因:</p>
+<ol>
+<li>内存节点 (memory node) 的算力不足. </li>
+<li>如果将计算工作转移到计算节点 (compute node), 需要使用巨大的网络带宽.</li>
+<li>不同节点间存在不一致的问题.</li>
+</ol>
+</li>
+<li><p>为了解决以上种种问题, 论文提出了ROLEX方法.</p>
+</li>
+</ul>
+<h1 id="ROLEX方法的主要内容"><a href="#ROLEX方法的主要内容" class="headerlink" title="ROLEX方法的主要内容"></a>ROLEX方法的主要内容</h1><h2 id="数据插入与模型训练解耦"><a href="#数据插入与模型训练解耦" class="headerlink" title="数据插入与模型训练解耦"></a>数据插入与模型训练解耦</h2><p><strong>传统方案:</strong> </p>
+<ol>
+<li>插入数据后, 对数据集重新排序</li>
+<li>将新的数据集传送到计算节点重新训练模型</li>
+<li>将新的模型同步到所有节点</li>
+</ol>
+<p><strong>ROLEX的方案:</strong></p>
+<p>对算法和模型改进后, ROLEX能实现以下功能:	</p>
+<ol>
+<li><p>新数据可以直接插入到内存节点. </p>
+</li>
+<li><p>即使插入了适量新数据, 模型无需重新训练也能继续正确索引. </p>
+</li>
+<li><p>插入的新数据较多时, 模型在内存节点就可以完成重新训练, 无需再传送到计算节点.</p>
+</li>
+</ol>
+<p><strong>实现方法:</strong></p>
+<ol>
+<li><p>向分段线性回归模型 (PLR) 中加入偏移量, 使得插入新数据后仍能索引数据.</p>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228102851396.png" alt="image-20230228102851396"></p>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228102839243.png" alt="image-20230228102839243"></p>
+</li>
+<li><p>数据只能在固定大小的数组区域移动, 查询数据时返回数据的所在区域 (leaf). 这样保证了数据不会丢失.</p>
+</li>
+<li><p>当某个leaf的容量不够时, 在相同的位置添加一个synonym-leaf. leaf和对应的synonym-leaf使用指针连接.</p>
+</li>
+</ol>
+<p><strong>这三个限制条件使得新插入的数据仍在之前预测过的范围之内, 模型不需要重新训练也能找到新插入的数据.</strong></p>
+<h2 id="ROLEX系统的组织结构"><a href="#ROLEX系统的组织结构" class="headerlink" title="ROLEX系统的组织结构"></a>ROLEX系统的组织结构</h2><p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228104223199.png" alt="image-20230228104223199"></p>
+<ol>
+<li><p>Leaves</p>
+<p>leaves储存在Leaf Region里. Leaf Region之前紧邻的8B储存leaves的个数 (alloc_num) 和能储存的最大数目.</p>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228184803390.png" alt="image-20230228184803390"></p>
+</li>
+<li><p>Upper models</p>
+<p>Upper models通过最小键集 (the smallest keys) 进行训练, 用来索引下层的PLR模型.</p>
+</li>
+<li><p>PLR models</p>
+<p>PLR模型由最小键集, 参数, 和leaf teble (LT) 和 synonym leaf table (SLT)组成. </p>
+<p>LT和SLT储存8B的entries. 每一条entry由1 bit的lock位, 7 bits的leaf region, 8bits的指针和48 bits的leaf number组成. SLT的第一项用于记录已经写入的entry数量 ($slot_{use}$). </p>
+<p>LT的大小在训练模型时决定, SLT的大小固定为$2^8$个entry.</p>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228190548217.png" alt="image-20230228190548217"></p>
+</li>
+<li><p>CirQ</p>
+<p>ROLEX会维护一个环形队列 (CirQ) 来储存重新训练后加入的新模型.</p>
+</li>
+<li><p>Learned cache</p>
+<p>Learned cache位于计算节点: 计算节点会将索引模型缓存到自身.</p>
+</li>
+</ol>
+<h2 id="单边索引操作-One-sided-Index-Operations"><a href="#单边索引操作-One-sided-Index-Operations" class="headerlink" title="单边索引操作 (One-sided Index Operations)"></a>单边索引操作 (One-sided Index Operations)</h2><p>单边索引操作都是在计算节点完成的.</p>
+<ol>
+<li><p>点查询</p>
+<p>点查询数据时, 会先用索引模型找到leaf在LT或SLT中的位置, 再根据下方的公式计算出leaves的实际地址. 最后使用doorbell batching的方式在leaves中找到数据.</p>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228192436637.png" alt="image-20230228192436637"></p>
+</li>
+<li><p>范围查询</p>
+<p>在进行[K, N]查询时, 会额外查询相邻的$N&#x2F;\delta$个leaf. 仍然使用doorbell batching的方式查询leaves.</p>
+</li>
+<li><p>插入</p>
+<p>先用点查询的方式找到相应的leaves, 然后将lock位设为1 (通过CAS), 插入数据, 最后将lock位设回0, 并将alloc_num和$slot_{use}$加上1 (通过FAA).</p>
+</li>
+<li><p>更新</p>
+<p>与插入类似, 同样先用点查询的方式找到对应的数据, 然后检查数据是否为最新, 如果不是则进行替换.</p>
+</li>
+<li><p>删除</p>
+<p>与插入和更新类似. 但删除某个数据时不改变其它数据的排列, 以确保预测模型在重新训练前仍能使用.</p>
+</li>
+</ol>
+<h2 id="模型异步重新训练-Asynchronous-Retraining"><a href="#模型异步重新训练-Asynchronous-Retraining" class="headerlink" title="模型异步重新训练 (Asynchronous Retraining)"></a>模型异步重新训练 (Asynchronous Retraining)</h2><p>当SLT的容量即将不足以容纳新数据时 (事实上是在距离完全填满还有$2^7-1$个slot时), 内存节点会异步重新训练模型.</p>
+<p>为了保证一致性, 在重新训练模型时, 不会直接阻塞计算节点的操作. 计算节点会通过对比旧的LT, SLT和新的LT, 将数据重定向到新的SLT, 从而避免不一致现象的发生.</p>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228200229987.png" alt="image-20230228200229987"></p>
+<h1 id="ROLEX方法的性能分析"><a href="#ROLEX方法的性能分析" class="headerlink" title="ROLEX方法的性能分析"></a>ROLEX方法的性能分析</h1><ol>
+<li>在不同的YCSB workload中, 与其它方法相比, ROLEX方法的吞吐量都有明显优势.</li>
+</ol>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228200935807.png" alt="image-20230228200935807"></p>
+<ol start="2">
+<li>在其它情况中, ROLEX方法的大吞吐量和低延迟都有明显优势.</li>
+</ol>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201138460.png" alt="image-20230228201138460"></p>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201324494.png" alt="image-20230228201324494"></p>
+<ol start="3">
+<li>对于分离式内存系统, 即CPU资源有限的情况下, ROLEX方法的可扩展性也优于其他方法.</li>
+</ol>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201407411.png" alt="image-20230228201407411"></p>
+<ol start="4">
+<li>ROLEX虽然训练模型的延迟略高, 但读写数据的延迟很低.</li>
+</ol>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201809137.png" alt="image-20230228201809137"></p>
+<ol start="5">
+<li>ROLEX的内存开销要明显优于传统的树形结构.</li>
+</ol>
+<p><img src="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/image-20230228201930513.png" alt="image-20230228201930513"></p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>应用于分离式内存的ROLEX技术</p><p><a href="http://example.com/2023/03/02/应用于分离式内存的ROLEX技术/">http://example.com/2023/03/02/应用于分离式内存的ROLEX技术/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>Doxel</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2023-03-02</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2023-03-02</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/%E7%A7%91%E7%A0%94%E8%AF%BE%E5%A0%82/">科研课堂</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98/">分离式内存</a></div><!--!--></article></div><!--!--><nav class="post-navigation mt-4 level is-mobile"><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2023/02/21/t-e-s-t/"><span class="level-item">t e s t</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div class="content" id="waline-thread"></div><script src="https://cdn.jsdelivr.net/npm/@waline/client@1.5.4/dist/Waline.min.js"></script><script>Waline({
+            el: '#waline-thread',
+            serverURL: "https://waline-fu0lnsg42-douyabula.vercel.app/",
+            path: window.location.pathname,
+            lang: "zh-CN",
+            visitor: false,
+            emoji: ["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],
+            dark: "disable",
+            meta: ["nick","mail","link"],
+            requiredMeta: [],
+            login: "enable",
+            
+            pageSize: 10,
+            
+            
+            math: false,
+            copyright: true,
+            locale: {"placeholder":"Comment here..."},
+        });</script></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/avatar.png" alt="Doxel"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">Doxel</p><p class="is-size-6 is-block">Student</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>Beihang University</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">11</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">3</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">8</p></a></div></div></nav><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/DouyaBula"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Bilibili" href="https://space.bilibili.com/36175858"><i class="fab fa-youtube"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Zhihu" href="https://www.zhihu.com/people/douya-73"><i class="fab fa-zhihu"></i></a></div></div></div><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">学习</span></span><span class="level-end"><span class="level-item tag">8</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%B5%8B%E8%AF%95/"><span class="level-start"><span class="level-item">测试</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E9%98%85%E8%AF%BB/"><span class="level-start"><span class="level-item">阅读</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-03-02T14:10:46.000Z">2023-03-02</time></p><p class="title"><a href="/2023/03/02/%E5%BA%94%E7%94%A8%E4%BA%8E%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98%E7%9A%84ROLEX%E6%8A%80%E6%9C%AF/">应用于分离式内存的ROLEX技术</a></p><p class="categories"><a href="/categories/%E9%98%85%E8%AF%BB/">阅读</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-02-21T01:45:01.000Z">2023-02-21</time></p><p class="title"><a href="/2023/02/21/t-e-s-t/">t e s t</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2022-10-06T12:16:38.000Z">2022-10-06</time></p><p class="title"><a href="/2022/10/06/%E5%B7%A5%E7%A7%91%E5%A4%A7%E7%89%A9%E3%80%8C%E6%9C%BA%E6%A2%B0%E6%8C%AF%E5%8A%A8%E5%92%8C%E7%94%B5%E7%A3%81%E6%8C%AF%E8%8D%A1%E3%80%8D%E6%89%8B%E5%86%8C/">工科大物「机械振动和电磁振荡」手册</a></p><p class="categories"><a href="/categories/%E5%AD%A6%E4%B9%A0/">学习</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2022-09-15T11:46:37.000Z">2022-09-15</time></p><p class="title"><a href="/2022/09/15/%E5%B7%A5%E7%A7%91%E5%A4%A7%E7%89%A9%E3%80%8C%E7%83%AD%E5%AD%A6%E3%80%8D%E6%89%8B%E5%86%8C/">工科大物「热学」手册</a></p><p class="categories"><a href="/categories/%E5%AD%A6%E4%B9%A0/">学习</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2022-09-05T13:08:54.000Z">2022-09-05</time></p><p class="title"><a href="/2022/09/05/Digital-Design-and-Computer-Architecture-%E7%AC%AC%E5%85%AD%E7%AB%A0%E5%BD%92%E7%BA%B3/">Digital-Design-and-Computer-Architecture-第六章归纳</a></p><p class="categories"><a href="/categories/%E5%AD%A6%E4%B9%A0/">学习</a></p></div></article></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2023/03/"><span class="level-start"><span class="level-item">三月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2023/02/"><span class="level-start"><span class="level-item">二月 2023</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/10/"><span class="level-start"><span class="level-item">十月 2022</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/09/"><span class="level-start"><span class="level-item">九月 2022</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/08/"><span class="level-start"><span class="level-item">八月 2022</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/archives/2022/07/"><span class="level-start"><span class="level-item">七月 2022</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/MIPS/"><span class="tag">MIPS</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Verilog/"><span class="tag">Verilog</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%88%86%E7%A6%BB%E5%BC%8F%E5%86%85%E5%AD%98/"><span class="tag">分离式内存</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B7%A5%E7%A7%91%E5%A4%A7%E5%AD%A6%E7%89%A9%E7%90%86/"><span class="tag">工科大学物理</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%B5%8B%E8%AF%95/"><span class="tag">测试</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%A7%91%E7%A0%94%E8%AF%BE%E5%A0%82/"><span class="tag">科研课堂</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%AC%94%E8%AE%B0/"><span class="tag">笔记</span><span class="tag">8</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90/"><span class="tag">计算机组成</span><span class="tag">6</span></a></div></div></div></div></div></div><div class="column column-right is-4-tablet is-4-desktop is-4-widescreen  order-3"><!--!--></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/logo.png" alt="Doxel&#039;s Garden" height="28"></a><p class="is-size-7"><span>&copy; 2023 Doxel</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="My GitHub" href="https://github.com/DouyaBula"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-CN");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script type="text/x-mathjax-config">MathJax.Hub.Config({
+            'HTML-CSS': {
+                matchFontHeight: false
+            },
+            SVG: {
+                matchFontHeight: false
+            },
+            CommonHTML: {
+                matchFontHeight: false
+            },
+            tex2jax: {
+                inlineMath: [
+                    ['$','$'],
+                    ['\\(','\\)']
+                ]
+            }
+        });</script><script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/unpacked/MathJax.js?config=TeX-MML-AM_CHTML" defer></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
